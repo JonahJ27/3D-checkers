@@ -18,7 +18,7 @@ pub struct BoardState {
 impl BoardState{
     // Checks if a move is valid. If not is will return Err result explaining why the move is invalid.
     // Otherwise it makes the move
-    pub fn try_to_move(&mut self, mut position_list: Vec<String>, red_turn: bool) -> Result<String, String> {
+    pub fn try_to_move(& mut self, mut position_list: Vec<String>, red_turn: bool) -> Result<String, String> {
         let mut taken_piece_posns = Vec::new();
         let first_pos = position_list.pop().ok_or("Not enough positions entered for a move.")?;
 
@@ -205,7 +205,7 @@ fn pos_to_row(pos: String) -> Result<u32, String> {
         return Err("Position is too short.".to_owned());
     }
     let mut chars = pos.chars();
-    chars.next();            red_turn = !red_turn;
+    chars.next();
     // need to add logic for if not a digit
     return Ok(chars.as_str().to_owned().parse::<u32>().unwrap() - 1);
 }
