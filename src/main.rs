@@ -7,15 +7,55 @@ use crate::board::GameState;
 
 fn main() -> io::Result<()> {
     let mut buffer = String::new();
+    println!("Input board size");
     io::stdin().read_line(&mut buffer)?;
-    println!("{}", buffer);
-    let size = buffer.trim().parse::<u32>().unwrap_or_default();
-    let mut game_state: Result<BoardState, String> = gen_board(size);
-    match game_state {
-        Err(game_state) => println!("{}", game_state),
-        Ok(game_state) => print!("{}", game_state),
+    let mut size = buffer.trim().parse::<u32>().unwrap_or_default();
+    // ask about this
+    let mut hold_board_state = None;
+    loop {
+        match gen_board(size) {
+            Err(msg) => println!("{}", msg),
+            Ok(board) => {
+                hold_board_state = Some(board);
+                break;
+            },
+        }
+        buffer = String::new();
+        io::stdin().read_line(&mut buffer)?;
+        size = buffer.trim().parse::<u32>().unwrap_or_default();
     }
+    let mut red_turn = false;
+    if let Some(mut board_state) = hold_board_state {
+        loop {
+            println!("{}", board_state);
+            let mut position_list: Vec<String> = Vec::new();
+            println!("Input position of piece");
+            buffer = String::new();
+            io::stdin().read_line(&mut buffer)?;
+            position_list.push(buffer.trim().to_owned().clone());
+            loop {
+                println!("Input position to move piece or enter to end");
+                buffer = String::new();
+                io::stdin().read_line(&mut buffer)?;
+                if buffer.len() < 2 {
+                    break;
+                }
 
+                position_list.push(buffer.trim().to_owned().clone());
+            }
+            position_list.reverse();
+            match board_state.try_to_move(position_list.clone(), red_turn) {
+                Err(s) => println!("{}", s),
+                Ok(valid) => { 
+                    println!("{}", valid);
+                    red_turn = !red_turn;
+                }
+            }
+        }
+    }
+    
+
+    
     Ok(())
 }
 
@@ -37,7 +77,7 @@ fn gen_game_state(board_sizes: Vec<u32>) -> Result<GameState, String> {
 
 fn gen_board(size: u32) -> Result<BoardState, String> {
     if size % 2 == 1 {
-        return Err("Checkers board must be even".to_owned())
+        return Err("Checkers board must be even. Try again".to_owned())
     }
 
     let mut board = Vec::new();
