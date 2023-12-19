@@ -7,52 +7,62 @@ use crate::board::GameState;
 
 fn main() -> io::Result<()> {
     let mut buffer = String::new();
-    println!("Input board size");
-    io::stdin().read_line(&mut buffer)?;
-    let mut size = buffer.trim().parse::<u32>().unwrap_or_default();
+    println!("Input board sizes separated by commas");
     // ask about this
-    let mut hold_board_state = None;
+    let mut hold_game_state = None;
     loop {
-        match gen_board(size) {
-            Err(msg) => println!("{}", msg),
-            Ok(board) => {
-                hold_board_state = Some(board);
-                break;
-            },
-        }
-        buffer = String::new();
         io::stdin().read_line(&mut buffer)?;
-        size = buffer.trim().parse::<u32>().unwrap_or_default();
+        let sizes: Vec<u32> = buffer.split(",").map(|s| s.to_string().trim().parse::<u32>().unwrap_or_default()).collect();
+        match gen_game_state(sizes) {
+            Err(s) => println!("{}", s), 
+            Ok(game_state) => {
+                hold_game_state = Some(game_state);
+                break;
+            }
+        }
+
+        println!("Try again. Input board sizes separated by commas");      
+        buffer = String::new();
     }
-    let mut red_turn = false;
-    if let Some(mut board_state) = hold_board_state {
+
+    if let Some(mut game_state) = hold_game_state {
         loop {
-            println!("{}", board_state);
-            let mut position_list: Vec<String> = Vec::new();
-            println!("Input position of piece");
+            println!("Input board number.");
             buffer = String::new();
             io::stdin().read_line(&mut buffer)?;
-            position_list.push(buffer.trim().to_owned().clone());
-            loop {
-                println!("Input position to move piece or enter to end");
+            if let Some(mut board_state) =  game_state.boards.get(
+                buffer.trim().parse::<u32>().unwrap_or_default() as usize) {
+                println!("{}", board_state.clone());
+                let mut position_list: Vec<String> = Vec::new();
+                println!("Input position of piece");
                 buffer = String::new();
                 io::stdin().read_line(&mut buffer)?;
-                if buffer.len() < 2 {
-                    break;
-                }
-
                 position_list.push(buffer.trim().to_owned().clone());
-            }
-            position_list.reverse();
-            match board_state.try_to_move(position_list.clone(), red_turn) {
-                Err(s) => println!("{}", s),
-                Ok(valid) => { 
-                    println!("{}", valid);
-                    red_turn = !red_turn;
+                loop {
+                    println!("Input position to move piece or enter to end");
+                    buffer = String::new();
+                    io::stdin().read_line(&mut buffer)?;
+                    if buffer.len() < 2 {
+                        break;
+                    }
+
+                    position_list.push(buffer.trim().to_owned().clone());
+                }
+                position_list.reverse();
+                match board_state.try_to_move(position_list.clone(), game_state.red_turn) {
+                    Err(s) => println!("{}", s),
+                    Ok(valid) => { 
+                        println!("{}", valid);
+                        game_state.red_turn = !game_state.red_turn;
+                    }
                 }
             }
+            
         }
-    }
+    } 
+    
+   
+    
     
 
     
@@ -60,6 +70,10 @@ fn main() -> io::Result<()> {
 }
 
 
+
+fn try_move_on_board() {
+
+}
 
 fn gen_game_state(board_sizes: Vec<u32>) -> Result<GameState, String> {
     let mut games: Vec<BoardState> = Vec::new();
@@ -99,7 +113,7 @@ fn gen_board(size: u32) -> Result<BoardState, String> {
         board.push(row);
     }
 
-    let mut board_state = BoardState{data: board};
+    let board_state = BoardState{data: board};
 
     return Ok(board_state);
 }
