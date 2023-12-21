@@ -15,6 +15,11 @@ pub struct BoardState {
     pub data: Vec<Vec<Tile>>
 }
 
+pub struct GameState {
+    pub boards: Vec<BoardState>,
+    pub red_turn: bool
+}
+
 impl BoardState{
     // Checks if a move is valid. If not is will return Err result explaining why the move is invalid.
     // Otherwise it makes the move
@@ -55,6 +60,12 @@ impl BoardState{
         let first_pos_type = self.data[pos_to_row(first_pos.clone())? as usize][pos_to_col(first_pos.clone())? as usize];
         self.data[pos_to_row(first_pos.clone())? as usize][pos_to_col(first_pos.clone())? as usize] = Tile::Empty;
         self.data[curr_row as usize][curr_col as usize] = first_pos_type;
+        if curr_row == 0 && !red_turn {
+            self.data[curr_row as usize][curr_col as usize] = Tile::BlackRoyals;
+        }
+        if curr_row == self.data.len() as u32 - 1 && red_turn {
+            self.data[curr_row as usize][curr_col as usize] = Tile::RedRoyals;
+        }
 
         for pos in taken_piece_posns {
             self.data[pos.0 as usize][pos.1 as usize] = Tile::Empty;
@@ -116,12 +127,14 @@ impl BoardState{
             if (curr_row as i32 - next_row as i32).abs() == 2 && 
                (curr_col as i32 - next_col as i32).abs() == 2 {
                 let tile_to_take = self.get_tile_at(
-                    (curr_row as i32 + (curr_row as i32 - next_row as i32)) as u32,
-                    (curr_col as i32 + (curr_col as i32 - next_col as i32)) as u32)?;
-
+                    (curr_row as i32 - (curr_row as i32 - next_row as i32)) as u32,
+                    (curr_col as i32 - (curr_col as i32 - next_col as i32)) as u32)?;
+                println!("{}", ((tile_to_take == &Tile::Black || tile_to_take == &Tile::BlackRoyals) 
+                    && !red_turn) || ((tile_to_take == &Tile::Red || 
+                    tile_to_take == &Tile::RedRoyals) && red_turn));
                 return Ok(((tile_to_take == &Tile::Black || tile_to_take == &Tile::BlackRoyals) 
-                    && red_turn) || ((tile_to_take == &Tile::Red || 
-                    tile_to_take == &Tile::RedRoyals) && !red_turn));
+                    && !red_turn) || ((tile_to_take == &Tile::Red || 
+                    tile_to_take == &Tile::RedRoyals) && red_turn));
             }
             else {
                 return Ok((curr_col as i32 - next_col as i32).abs() == 1 && 
@@ -191,10 +204,6 @@ impl fmt::Display for BoardState {
     }
 }
 
-pub struct GameState {
-    pub boards: Vec<BoardState>,
-    pub red_turn: bool
-}
 
 
 
